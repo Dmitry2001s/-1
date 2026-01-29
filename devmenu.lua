@@ -1,4 +1,4 @@
--- DEV CHEAT MENU (SHOW PLAYER NAME)
+-- DEV CHEAT MENU (RAINBOW + ACTIVE COLORS + SPEED CONTROL)
 
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
@@ -23,8 +23,8 @@ openBtn.Draggable = true
 
 -- MAIN FRAME
 local frame = Instance.new("Frame", gui)
-frame.Size = UDim2.new(0, 260, 0, 260)
-frame.Position = UDim2.new(0.5, -130, 0.5, -130)
+frame.Size = UDim2.new(0, 300, 0, 300)
+frame.Position = UDim2.new(0.5, -150, 0.5, -150)
 frame.BackgroundColor3 = Color3.fromRGB(30,30,30)
 frame.Visible = false
 frame.Active = true
@@ -39,20 +39,49 @@ nameLabel.TextColor3 = Color3.new(1,1,1)
 nameLabel.BackgroundTransparency = 1
 nameLabel.TextScaled = true
 
+-- BUTTON CREATOR
 local function makeButton(text, y)
 	local b = Instance.new("TextButton", frame)
-	b.Size = UDim2.new(1, -20, 0, 35)
+	b.Size = UDim2.new(0.6, -10, 0, 35)
 	b.Position = UDim2.new(0, 10, 0, y)
 	b.Text = text
 	b.BackgroundColor3 = Color3.fromRGB(45,45,45)
 	b.TextColor3 = Color3.new(1,1,1)
+	b.AutoButtonColor = false
+
+	-- hover effect
+	b.MouseEnter:Connect(function()
+		b.BackgroundColor3 = Color3.fromRGB(70,70,70)
+	end)
+	b.MouseLeave:Connect(function()
+		if not b.Active then
+			b.BackgroundColor3 = Color3.fromRGB(45,45,45)
+		end
+	end)
+
+	b.Active = false -- custom flag for active state
 	return b
 end
 
-local flyBtn    = makeButton("Fly: OFF", 50)
-local speedBtn  = makeButton("Speed: OFF", 90)
-local godBtn    = makeButton("God: OFF", 130)
-local noclipBtn = makeButton("Noclip: OFF", 170)
+-- SPEED TEXTBOX
+local function makeSpeedBox(y)
+	local box = Instance.new("TextBox", frame)
+	box.Size = UDim2.new(0.3, -10, 0, 35)
+	box.Position = UDim2.new(0.65, 0, 0, y)
+	box.PlaceholderText = "16"
+	box.Text = "16"
+	box.ClearTextOnFocus = false
+	box.TextScaled = true
+	return box
+end
+
+-- Buttons
+local flyBtn    = makeButton("Fly", 50)
+local speedBtn  = makeButton("Speed", 90)
+local godBtn    = makeButton("God", 130)
+local noclipBtn = makeButton("Noclip", 170)
+
+local speedBox = makeSpeedBox(90) -- рядом с Speed кнопкой
 
 -- CHARACTER
 local char, hum, root
@@ -67,10 +96,10 @@ player.CharacterAdded:Connect(loadChar)
 -- FLY
 local flying = false
 local bv, bg
-
 flyBtn.MouseButton1Click:Connect(function()
 	flying = not flying
-	flyBtn.Text = flying and "Fly: ON" or "Fly: OFF"
+	flyBtn.Active = flying
+	flyBtn.BackgroundColor3 = flying and Color3.fromRGB(0,255,0) or Color3.fromRGB(45,45,45)
 
 	if flying then
 		bv = Instance.new("BodyVelocity", root)
@@ -94,24 +123,37 @@ end)
 local speedOn = false
 speedBtn.MouseButton1Click:Connect(function()
 	speedOn = not speedOn
-	hum.WalkSpeed = speedOn and 50 or 16
-	speedBtn.Text = speedOn and "Speed: ON" or "Speed: OFF"
+	speedBtn.Active = speedOn
+	speedBtn.BackgroundColor3 = speedOn and Color3.fromRGB(0,255,0) or Color3.fromRGB(45,45,45)
+	local val = tonumber(speedBox.Text)
+	hum.WalkSpeed = speedOn and (val or 16) or 16
+end)
+
+speedBox.FocusLost:Connect(function()
+	if speedBtn.Active then
+		local val = tonumber(speedBox.Text)
+		if val then
+			hum.WalkSpeed = val
+		end
+	end
 end)
 
 -- GOD
 local godOn = false
 godBtn.MouseButton1Click:Connect(function()
 	godOn = not godOn
+	godBtn.Active = godOn
+	godBtn.BackgroundColor3 = godOn and Color3.fromRGB(0,255,0) or Color3.fromRGB(45,45,45)
 	hum.MaxHealth = godOn and math.huge or 100
 	hum.Health = hum.MaxHealth
-	godBtn.Text = godOn and "God: ON" or "God: OFF"
 end)
 
 -- NOCLIP
 local noclip = false
 noclipBtn.MouseButton1Click:Connect(function()
 	noclip = not noclip
-	noclipBtn.Text = noclip and "Noclip: ON" or "Noclip: OFF"
+	noclipBtn.Active = noclip
+	noclipBtn.BackgroundColor3 = noclip and Color3.fromRGB(0,255,0) or Color3.fromRGB(45,45,45)
 end)
 
 RunService.Stepped:Connect(function()
@@ -124,7 +166,20 @@ RunService.Stepped:Connect(function()
 	end
 end)
 
--- TOGGLE MENU
+-- BUTTON TOGGLE
 openBtn.MouseButton1Click:Connect(function()
 	frame.Visible = not frame.Visible
+end)
+
+-- 🌈 RAINBOW EFFECT
+local hue = 0
+RunService.RenderStepped:Connect(function()
+	hue = (hue + 0.005) % 1
+	frame.BackgroundColor3 = Color3.fromHSV(hue, 0.7, 0.8)
+	for _, btn in ipairs({flyBtn, speedBtn, godBtn, noclipBtn}) do
+		if not btn.Active then
+			btn.BackgroundColor3 = Color3.fromHSV((hue + 0.1) % 1, 0.7, 0.8)
+		end
+	end
+	nameLabel.TextColor3 = Color3.fromHSV((hue + 0.2) % 1, 0.9, 1)
 end)
