@@ -5,7 +5,7 @@ local TweenService = game:GetService("TweenService")
 local player = Players.LocalPlayer
 
 local gui = Instance.new("ScreenGui", player:WaitForChild("PlayerGui"))
-gui.Name = "DevCheats5"
+gui.Name = "DevCheatsMenu"
 
 local openBtn = Instance.new("TextButton", gui)
 openBtn.Size = UDim2.new(0,50,0,50)
@@ -288,17 +288,25 @@ end)
 teleportBtn.MouseButton1Click:Connect(function()
 	if char and workspace:FindFirstChild("Spawn") then
 		root.CFrame = workspace.Spawn.CFrame + Vector3.new(0,5,0)
+		teleportBtn.Active = true
+	else
+		teleportBtn.Active = false
 	end
 end)
 
 speedBoostBtn.MouseButton1Click:Connect(function()
-	hum.WalkSpeed = hum.WalkSpeed + 50
-	speedBoostBtn.Active = true
+	if hum.WalkSpeed < 200 then
+		hum.WalkSpeed = hum.WalkSpeed + 50
+		speedBoostBtn.Active = true
+	else
+		hum.WalkSpeed = 16
+		speedBoostBtn.Active = false
+	end
 end)
 
 antiFallBtn.MouseButton1Click:Connect(function()
-	hum.FloorMaterial = Enum.Material.SmoothPlastic
-	antiFallBtn.Active = true
+	hum.FloorMaterial = hum.FloorMaterial==Enum.Material.SmoothPlastic and Enum.Material.Wood or Enum.Material.SmoothPlastic
+	antiFallBtn.Active = hum.FloorMaterial==Enum.Material.SmoothPlastic
 end)
 
 openBtn.MouseButton1Click:Connect(function()
