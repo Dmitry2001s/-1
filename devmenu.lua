@@ -79,11 +79,7 @@ for i,cat in ipairs(categories) do
 	btn.MouseButton1Click:Connect(function()
 		currentCategory = cat
 		for name,p in pairs(panels) do
-			if name==cat then
-				p.Visible = true
-			else
-				p.Visible = false
-			end
+			p.Visible = (name==cat)
 		end
 	end)
 end
@@ -168,8 +164,9 @@ flyBtn.MouseButton1Click:Connect(function()
 		bg = Instance.new("BodyGyro", root)
 		bv.MaxForce = Vector3.new(1e5,1e5,1e5)
 		bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
-		RunService.RenderStepped:Connect(function()
-			if not flying then return end
+		local conn
+		conn = RunService.RenderStepped:Connect(function()
+			if not flying then conn:Disconnect() if bv then bv:Destroy() end if bg then bg:Destroy() end return end
 			local cam = workspace.CurrentCamera
 			bv.Velocity = cam.CFrame.LookVector * 60
 			bg.CFrame = cam.CFrame
@@ -186,8 +183,9 @@ vflyBtn.MouseButton1Click:Connect(function()
 	if vFlying then
 		bv = Instance.new("BodyVelocity", root)
 		bv.MaxForce = Vector3.new(1e5,1e5,1e5)
-		RunService.RenderStepped:Connect(function()
-			if not vFlying then return end
+		local conn
+		conn = RunService.RenderStepped:Connect(function()
+			if not vFlying then conn:Disconnect() if bv then bv:Destroy() end return end
 			local vel = Vector3.new(0,0,0)
 			if UIS:IsKeyDown(Enum.KeyCode.W) then vel = vel + Vector3.new(0,50,0) end
 			if UIS:IsKeyDown(Enum.KeyCode.S) then vel = vel + Vector3.new(0,-50,0) end
@@ -206,8 +204,9 @@ cflyBtn.MouseButton1Click:Connect(function()
 		bg = Instance.new("BodyGyro", root)
 		bv.MaxForce = Vector3.new(1e5,1e5,1e5)
 		bg.MaxTorque = Vector3.new(1e5,1e5,1e5)
-		RunService.RenderStepped:Connect(function()
-			if not cFlying then return end
+		local conn
+		conn = RunService.RenderStepped:Connect(function()
+			if not cFlying then conn:Disconnect() if bv then bv:Destroy() end if bg then bg:Destroy() end return end
 			local cam = workspace.CurrentCamera
 			local vel = Vector3.new(0,0,0)
 			if UIS:IsKeyDown(Enum.KeyCode.W) then vel = vel + cam.CFrame.LookVector*60 end
