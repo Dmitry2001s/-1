@@ -1,4 +1,4 @@
--- Dmitry2001s Ultimate Menu v4.0 (Fly Speed Update)
+-- Dmitry2001s Ultimate Menu v5.0 (Final Fix)
 local player = game.Players.LocalPlayer
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
@@ -19,21 +19,16 @@ local SettingsPage = Instance.new("ScrollingFrame", MainFrame)
 
 -- СОСТОЯНИЕ
 local lang = "RU"
-local walkSpeedVal = 16
 local flySpeedVal = 50
 local flying, noclip = false, false
+local noclipConn
 
 -- ТЕМЫ
 local themes = {
     Dark = Color3.fromRGB(25, 25, 25),
     Cyberpunk = Color3.fromRGB(40, 0, 60),
-    Neon = Color3.fromRGB(0, 45, 45)
-}
-
--- ЛОКАЛИЗАЦИЯ
-local langData = {
-    RU = {func = "Функции", sett = "Настройки", fly = "Полет", noclip = "Сквозь стены", lang = "Язык: RU", theme = "Тема: ", fspeed = "Скорость полета: ", wspeed = "Скорость ходьбы: "},
-    EN = {func = "Functions", sett = "Settings", fly = "Fly Mode", noclip = "Noclip", lang = "Lang: EN", theme = "Theme: ", fspeed = "Fly Speed: ", wspeed = "Walk Speed: "}
+    Neon = Color3.fromRGB(0, 45, 45),
+    White = Color3.fromRGB(240, 240, 240)
 }
 
 -- НАСТРОЙКА GUI
@@ -73,22 +68,19 @@ local function styleTab(btn, text, pos)
     btn.Size = UDim2.new(0.5, -5, 1, 0)
     btn.Position = pos
     btn.Text = text
-    btn.BackgroundColor3 = Color3.fromRGB(45, 45, 45)
+    btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.GothamMedium
     Instance.new("UICorner", btn)
 end
-styleTab(FunctionsTabBtn, "Функции", UDim2.new(0, 0, 0, 0))
-styleTab(SettingsTabBtn, "Настройки", UDim2.new(0.5, 5, 0, 0))
+styleTab(FunctionsTabBtn, "Functions", UDim2.new(0, 0, 0, 0))
+styleTab(SettingsTabBtn, "Settings", UDim2.new(0.5, 5, 0, 0))
 
 local function setupPage(page)
     page.Size = UDim2.new(1, -20, 1, -100)
     page.Position = UDim2.new(0, 10, 0, 85)
     page.BackgroundTransparency = 1
-    page.CanvasSize = UDim2.new(0, 0, 1.2, 0)
     page.ScrollBarThickness = 2
-    local list = Instance.new("UIListLayout", page)
-    list.Padding = UDim.new(0, 10)
+    Instance.new("UIListLayout", page).Padding = UDim.new(0, 10)
 end
 setupPage(FunctionsPage)
 setupPage(SettingsPage)
@@ -101,131 +93,97 @@ SettingsTabBtn.MouseButton1Click:Connect(function() FunctionsPage.Visible = fals
 function createBtn(parent, text, callback)
     local btn = Instance.new("TextButton", parent)
     btn.Size = UDim2.new(1, 0, 0, 35)
-    btn.BackgroundColor3 = Color3.fromRGB(55, 55, 55)
+    btn.BackgroundColor3 = Color3.fromRGB(70, 70, 70)
     btn.Text = text
     btn.TextColor3 = Color3.new(1,1,1)
-    btn.Font = Enum.Font.Gotham
     Instance.new("UICorner", btn)
     btn.MouseButton1Click:Connect(function() callback(btn) end)
     return btn
 end
 
+-- СЛАЙДЕР
 function createSlider(parent, labelText, min, max, default, callback)
     local container = Instance.new("Frame", parent)
-    container.Size = UDim2.new(1, 0, 0, 50)
+    container.Size = UDim2.new(1, 0, 0, 45)
     container.BackgroundTransparency = 1
-    
-    local lab = Instance.new("TextLabel", container)
-    lab.Size = UDim2.new(1, 0, 0, 20)
-    lab.Text = labelText .. ": " .. default
-    lab.TextColor3 = Color3.new(1,1,1)
-    lab.BackgroundTransparency = 1
-    lab.Font = Enum.Font.Gotham
-    
-    local bar = Instance.new("TextButton", container)
-    bar.Size = UDim2.new(1, 0, 0, 10)
-    bar.Position = UDim2.new(0, 0, 0, 25)
-    bar.BackgroundColor3 = Color3.fromRGB(80, 80, 80)
-    bar.Text = ""
-    Instance.new("UICorner", bar)
-    
-    local fill = Instance.new("Frame", bar)
-    fill.Size = UDim2.new((default-min)/(max-min), 0, 1, 0)
-    fill.BackgroundColor3 = Color3.fromRGB(0, 255, 150)
-    Instance.new("UICorner", fill)
-
-    local function update(input)
-        local pos = math.clamp((input.Position.X - bar.AbsolutePosition.X) / bar.AbsoluteSize.X, 0, 1)
-        fill.Size = UDim2.new(pos, 0, 1, 0)
-        local val = math.floor(min + (pos * (max - min)))
-        lab.Text = labelText .. ": " .. val
-        callback(val)
-    end
-
-    bar.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-            local move = UserInputService.InputChanged:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseMovement or i.UserInputType == Enum.UserInputType.Touch then
-                    update(i)
-                end
-            end)
-            UserInputService.InputEnded:Connect(function(i)
-                if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then
-                    move:Disconnect()
-                end
-            end)
-            update(input)
-        end
+    local lab = Instance.new("TextLabel", container); lab.Size = UDim2.new(1,0,0,15); lab.Text = labelText..": "..default; lab.TextColor3 = Color3.new(1,1,1); lab.BackgroundTransparency = 1
+    local bar = Instance.new("TextButton", container); bar.Size = UDim2.new(1,0,0,8); bar.Position = UDim2.new(0,0,0,20); bar.Text = ""; bar.BackgroundColor3 = Color3.new(0.3,0.3,0.3); Instance.new("UICorner", bar)
+    local fill = Instance.new("Frame", bar); fill.Size = UDim2.new((default-min)/(max-min),0,1,0); fill.BackgroundColor3 = Color3.new(0,1,0.5); Instance.new("UICorner", fill)
+    bar.MouseButton1Down:Connect(function()
+        local move = RunService.RenderStepped:Connect(function()
+            local p = math.clamp((UserInputService:GetMouseLocation().X - bar.AbsolutePosition.X)/bar.AbsoluteSize.X, 0, 1)
+            fill.Size = UDim2.new(p,0,1,0)
+            local v = math.floor(min + (p*(max-min)))
+            lab.Text = labelText..": "..v
+            callback(v)
+        end)
+        UserInputService.InputEnded:Connect(function(i) if i.UserInputType == Enum.UserInputType.MouseButton1 or i.UserInputType == Enum.UserInputType.Touch then move:Disconnect() end end)
     end)
 end
 
--- ВКЛАДКА: ФУНКЦИИ
-createToggle = function(text, callback)
-    local btn = createBtn(FunctionsPage, text .. ": OFF", function(b)
-        local s = not b:GetAttribute("Active")
-        b:SetAttribute("Active", s)
-        b.Text = text .. ": " .. (s and "ON" or "OFF")
-        b.BackgroundColor3 = s and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(55, 55, 55)
-        callback(s)
-    end)
-end
-
-createToggle(langData[lang].fly, function(v)
-    flying = v
-    if flying and player.Character then
-        local root = player.Character:FindFirstChild("HumanoidRootPart")
+-- ФУНКЦИИ
+createBtn(FunctionsPage, "Fly: OFF", function(b)
+    flying = not flying
+    b.Text = "Fly: "..(flying and "ON" or "OFF")
+    b.BackgroundColor3 = flying and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(70, 70, 70)
+    
+    if flying then
+        local char = player.Character
+        local root = char:FindFirstChild("HumanoidRootPart")
+        local camera = workspace.CurrentCamera
         local bv = Instance.new("BodyVelocity", root)
-        bv.Name = "FlyV"
         bv.MaxForce = Vector3.new(1e6, 1e6, 1e6)
+        bv.Velocity = Vector3.new(0,0,0)
+        
         task.spawn(function()
             while flying do
-                bv.Velocity = player.Character.Humanoid.MoveDirection * flySpeedVal + Vector3.new(0, 0.1, 0)
+                local dir = camera.CFrame.LookVector
+                local move = char.Humanoid.MoveDirection
+                if move.Magnitude > 0 then
+                    bv.Velocity = dir * flySpeedVal
+                else
+                    bv.Velocity = Vector3.new(0, 0.1, 0)
+                end
                 task.wait()
             end
-            if bv then bv:Destroy() end
+            bv:Destroy()
         end)
     end
 end)
 
-createToggle(langData[lang].noclip, function(v) noclip = v end)
-
-createSlider(FunctionsPage, "Speed", 16, 300, 16, function(v)
-    walkSpeedVal = v
-    if player.Character and player.Character:FindFirstChild("Humanoid") then
-        player.Character.Humanoid.WalkSpeed = v
-    end
-end)
-
-createSlider(FunctionsPage, "Fly Speed", 10, 500, 50, function(v)
-    flySpeedVal = v
-end)
-
--- ВКЛАДКА: НАСТРОЙКИ
-local langBtn = createBtn(SettingsPage, "Language: RU", function(b)
-    lang = (lang == "RU" and "EN" or "RU")
-    b.Text = langData[lang].lang
-    FunctionsTabBtn.Text = langData[lang].func
-    SettingsTabBtn.Text = langData[lang].sett
-end)
-
-local themeBtn = createBtn(SettingsPage, "Theme: Dark", function(b)
-    if MainFrame.BackgroundColor3 == themes.Dark then
-        MainFrame.BackgroundColor3 = themes.Cyberpunk
-        b.Text = langData[lang].theme .. "Cyberpunk"
-    elseif MainFrame.BackgroundColor3 == themes.Cyberpunk then
-        MainFrame.BackgroundColor3 = themes.Neon
-        b.Text = langData[lang].theme .. "Neon"
+createBtn(FunctionsPage, "Noclip: OFF", function(b)
+    noclip = not noclip
+    b.Text = "Noclip: "..(noclip and "ON" or "OFF")
+    b.BackgroundColor3 = noclip and Color3.fromRGB(0, 150, 0) or Color3.fromRGB(70, 70, 70)
+    
+    if noclip then
+        noclipConn = RunService.Stepped:Connect(function()
+            if not noclip then noclipConn:Disconnect() return end
+            if player.Character then
+                for _, p in pairs(player.Character:GetDescendants()) do
+                    if p:IsA("BasePart") then p.CanCollide = false end
+                end
+            end
+        end)
     else
-        MainFrame.BackgroundColor3 = themes.Dark
-        b.Text = langData[lang].theme .. "Dark"
+        if noclipConn then noclipConn:Disconnect() end
     end
 end)
 
--- ЦИКЛЫ
-RunService.Stepped:Connect(function()
-    if noclip and player.Character then
-        for _, p in pairs(player.Character:GetDescendants()) do
-            if p:IsA("BasePart") then p.CanCollide = false end
-        end
-    end
+createSlider(FunctionsPage, "Walk Speed", 16, 300, 16, function(v) if player.Character then player.Character.Humanoid.WalkSpeed = v end end)
+createSlider(FunctionsPage, "Fly Speed", 10, 500, 50, function(v) flySpeedVal = v end)
+
+-- НАСТРОЙКИ (Тема и Язык)
+createBtn(SettingsPage, "Theme: Change", function(b)
+    if MainFrame.BackgroundColor3 == themes.Dark then MainFrame.BackgroundColor3 = themes.Cyberpunk
+    elseif MainFrame.BackgroundColor3 == themes.Cyberpunk then MainFrame.BackgroundColor3 = themes.Neon
+    elseif MainFrame.BackgroundColor3 == themes.Neon then MainFrame.BackgroundColor3 = themes.White
+        CreditsLabel.TextColor3 = Color3.new(0,0,0) -- Чтобы было видно на белом
+    else MainFrame.BackgroundColor3 = themes.Dark end
+end)
+
+createBtn(SettingsPage, "Lang: RU/EN", function(b)
+    lang = (lang == "RU" and "EN" or "RU")
+    FunctionsTabBtn.Text = (lang == "RU" and "Функции" or "Functions")
+    SettingsTabBtn.Text = (lang == "RU" and "Настройки" or "Settings")
 end)
