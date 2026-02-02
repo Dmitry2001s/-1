@@ -1,15 +1,16 @@
--- [[ DMITRY258 v71.0 - FINAL STABLE ]]
+-- [[ DMITRY258 v71.0 - FINAL STABLE UPDATED ]]
 
 local player = game:GetService("Players").LocalPlayer
 local runService = game:GetService("RunService")
 local uis = game:GetService("UserInputService")
 local camera = workspace.CurrentCamera
+local tweenService = game:GetService("TweenService")
 
 local states = {
     flying = false,
     noclip = false,
     infJump = false,
-    camlock = false, -- Новая функция
+    camlock = false,
     visible = true,
     lang = "RU",
     theme = "Rainbow",
@@ -23,6 +24,35 @@ local states = {
     langOpen = false,
     themeOpen = false
 }
+
+-- [[ ИНТРО "Dmitry258" ]]
+local function playIntro()
+    local introGui = Instance.new("ScreenGui", player.PlayerGui)
+    introGui.DisplayOrder = 999
+    
+    local frame = Instance.new("Frame", introGui)
+    frame.Size = UDim2.new(1, 0, 1, 0)
+    frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+    frame.BackgroundTransparency = 0
+    
+    local text = Instance.new("TextLabel", frame)
+    text.Size = UDim2.new(1, 0, 1, 0)
+    text.BackgroundTransparency = 1
+    text.Text = "Dmitry258"
+    text.TextColor3 = Color3.fromRGB(255, 255, 255)
+    text.Font = Enum.Font.GothamBold
+    text.TextSize = 1
+    text.TextTransparency = 1
+
+    -- Анимация появления текста
+    tweenService:Create(text, TweenInfo.new(1.5, Enum.EasingStyle.Quart, Enum.EasingDirection.Out), {TextSize = 60, TextTransparency = 0}):Play()
+    task.wait(2)
+    -- Анимация исчезновения всего интро
+    tweenService:Create(text, TweenInfo.new(1, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {TextTransparency = 1}):Play()
+    tweenService:Create(frame, TweenInfo.new(1, Enum.EasingStyle.Quart, Enum.EasingDirection.In), {BackgroundTransparency = 1}):Play()
+    task.wait(1)
+    introGui:Destroy()
+end
 
 local langMap = {
     RU = {
@@ -72,7 +102,6 @@ local function notify(text)
     end)
 end
 
--- [[ ЛОГИКА CAMLOCK ]]
 local function getClosestPlayer()
     local closest, dist = nil, math.huge
     for _, v in pairs(game.Players:GetPlayers()) do
@@ -84,14 +113,12 @@ local function getClosestPlayer()
     return closest
 end
 
--- [[ ОСНОВНОЙ ЦИКЛ ]]
 runService.RenderStepped:Connect(function()
     local char = player.Character
     if char and char:FindFirstChild("Humanoid") then
         local hum, root = char.Humanoid, char:FindFirstChild("HumanoidRootPart")
         hum.WalkSpeed = states.walkSpeed
         
-        -- Noclip/Fly collision
         for _, v in pairs(char:GetDescendants()) do
             if v:IsA("BasePart") then
                 if states.noclip or states.flying then v.CanCollide = false
@@ -99,12 +126,10 @@ runService.RenderStepped:Connect(function()
             end
         end
 
-        -- Fly Velocity
         if states.flying and root then
             root.Velocity = (hum.MoveDirection.Magnitude > 0) and (camera.CFrame.LookVector * states.flySpeed) or Vector3.new(0, 0.1, 0)
         end
 
-        -- Camlock
         if states.camlock then
             local target = getClosestPlayer()
             if target and target.Character and target.Character:FindFirstChild("Head") then
@@ -114,14 +139,12 @@ runService.RenderStepped:Connect(function()
     end
 end)
 
--- [[ БЕСКОНЕЧНЫЙ ПРЫЖОК (ФИКС) ]]
 uis.JumpRequest:Connect(function()
     if states.infJump and player.Character and player.Character:FindFirstChildOfClass("Humanoid") then
         player.Character:FindFirstChildOfClass("Humanoid"):ChangeState(Enum.HumanoidStateType.Jumping)
     end
 end)
 
--- [[ ESP ]]
 local function createESP(p)
     if p == player then return end
     local function apply()
@@ -144,7 +167,6 @@ end
 for _, v in pairs(game.Players:GetPlayers()) do createESP(v) end
 game.Players.PlayerAdded:Connect(createESP)
 
--- [[ ИНТЕРФЕЙС ]]
 local function build()
     local sg = Instance.new("ScreenGui", player.PlayerGui); sg.Name = "DmitryV71"; sg.ResetOnSpawn = false
     local main = Instance.new("Frame", sg); main.Size = UDim2.new(0, 700, 0, 520); main.Position = UDim2.new(0.5, -350, 0.5, -260); main.BackgroundColor3 = Color3.fromRGB(12,12,12); main.Active = true; main.Draggable = true; main.ClipsDescendants = true; Instance.new("UICorner", main)
@@ -198,7 +220,15 @@ local function build()
         b.MouseButton1Click:Connect(function() clear(); cb() end)
     end
 
-    local function showCheats() addBtn("fly", "flying"); addBtn("noclip", "noclip"); addBtn("infJump", "infJump"); addBtn("camlock", "camlock"); addSlider("walk", 16, 300, states.walkSpeed, "walkSpeed"); addSlider("flyS", 10, 500, states.flySpeed, "flySpeed") end
+    local function showCheats() 
+        addBtn("fly", "flying"); 
+        addBtn("noclip", "noclip"); 
+        addBtn("infJump", "infJump"); 
+        addBtn("camlock", "camlock"); 
+        addSlider("walk", 16, 1000, states.walkSpeed, "walkSpeed"); -- До 1000
+        addSlider("flyS", 10, 1000, states.flySpeed, "flySpeed")    -- До 1000
+    end
+    
     local function showVisuals() 
         addBtn("espN", "espNames"); addBtn("espB", "espBoxes") 
         local function cBtn(n, c, rb)
@@ -244,4 +274,6 @@ local function build()
     notify(getL("welcome")); showCheats()
 end
 
+-- Запуск
+task.spawn(playIntro)
 build()
